@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Masjid Digital - Masjid Al-Ijabah</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        emeraldPine: '#084734',
+                        limeGlow: '#CEF17B',
+                        greenTea: '#CDEDB3',
+                        darkBg: '#04241A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #04241A;
+            color: #ffffff;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            letter-spacing: normal;
+        }
+
+        .slide-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .digit {
+            display: inline-block;
+            width: 0.65em;
+            text-align: center;
+        }
+        .colon {
+            display: inline-block;
+            width: 0.3em;
+            text-align: center;
+        }
+
+        .ui-overlay {
+            transition: opacity 1s ease-in-out;
+        }
+        .ui-overlay.hidden-ui {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .hero-overlay {
+            background: linear-gradient(180deg, rgba(4,36,26,0.8) 0%, rgba(4,36,26,0.1) 40%, rgba(4,36,26,0.2) 60%, rgba(4,36,26,0.95) 100%);
+            transition: opacity 1s ease-in-out;
+        }
+        .drop-zone {
+            border: 2px dashed #CEF17B;
+            transition: all 0.2s ease;
+        }
+        .drop-zone.dragover {
+            background-color: rgba(206, 241, 123, 0.2);
+            border-color: #ffffff;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen relative overflow-hidden font-poppins">
+
+    <!-- TOMBOL ADMIN PANEL -->
+    <button onclick="openLoginModal()" class="fixed top-4 right-4 bg-black/40 hover:bg-black/70 text-limeGlow p-2.5 rounded-full z-50 border border-white/20 transition">
+        ⚙️
+    </button>
+
+    <!-- 1. FULL BACKGROUND SLIDESHOW HERO -->
+    <div id="slides-wrapper" class="absolute inset-0 w-full h-full z-0 bg-darkBg">
+        <img id="bg-slide-1" class="slide-bg opacity-100" src="" alt="Slide 1">
+        <img id="bg-slide-2" class="slide-bg opacity-0" src="" alt="Slide 2">
+        <div id="no-photo-placeholder" class="hidden absolute inset-0 flex items-center justify-center text-limeGlow/30 font-medium text-lg">
+            Masjid Al-Ijabah Digital Display
+        </div>
+    </div>
+
+    <!-- OVERLAY GRADIENT -->
+    <div id="hero-gradient" class="hero-overlay absolute inset-0 z-10 pointer-events-none"></div>
+
+    <!-- 2. KONTEN OVERLAY UTAMA -->
+    <div id="main-display" class="ui-overlay relative z-20 h-full flex flex-col justify-between pt-8 px-10 pb-0">
+        
+        <!-- HEADER -->
+        <header class="flex justify-between items-center">
+            <div class="flex items-center gap-6">
+                <!-- LOGO MASJID -->
+                <img id="disp-logo" src="" alt="Logo Masjid Al-Ijabah" class="h-36 w-36 object-contain drop-shadow-lg">
+                <!-- NAMA & ALAMAT MASJID -->
+                <div class="flex flex-col justify-center">
+                    <h1 id="disp-nama" class="text-5xl font-bold text-white tracking-wide uppercase drop-shadow-lg leading-none">MASJID AL-IJABAH</h1>
+                    <p id="disp-alamat" class="text-white text-lg font-normal tracking-normal uppercase mt-2.5 drop-shadow">Pura Bojonggede Blok J&I, Tajurhalang, Kab. Bogor</p>
+                </div>
+            </div>
+
+            <!-- JAM DIGITAL UTAMA & TANGGAL -->
+            <div class="text-right flex flex-col justify-center">
+                <div class="flex justify-end">
+                    <div id="clock" class="text-8xl font-semibold text-white font-poppins tracking-normal drop-shadow-2xl leading-none text-right flex items-center justify-end">
+                        <span class="digit" id="h1">0</span><span class="digit" id="h2">0</span><span class="colon">:</span><span class="digit" id="m1">0</span><span class="digit" id="m2">0</span><span class="colon">:</span><span class="digit" id="s1">0</span><span class="digit" id="s2">0</span>
+                    </div>
+                </div>
+                <!-- TANGGAL MASEHI -->
+                <div id="date" class="text-2xl text-white font-medium tracking-normal uppercase mt-2 drop-shadow">--</div>
+                <!-- TANGGAL HIJRIAH -->
+                <div id="hijri-date" class="text-lg text-white/90 font-medium tracking-normal uppercase mt-1 drop-shadow">-- -- H</div>
+            </div>
+        </header>
+
+        <!-- FOOTER WRAPPER -->
+        <div class="flex flex-col">
+            <section class="grid grid-cols-6 items-end h-44" id="prayer-cards">
+                
+                <div id="card-subuh" class="prayer-card h-full p-4 flex flex-col justify-end transition-all duration-500 relative">
+                    <span class="card-label text-white text-xl font-semibold uppercase tracking-normal mb-1">Shubuh</span>
+                    <div class="line-accent w-full h-1 bg-white/40 mb-2"></div>
+                    <span id="time-subuh" class="card-time text-5xl font-light text-white/90">--:--</span>
+                </div>
+
+                <div id="card-syuruq" class="prayer-card h-full p-4 flex flex-col justify-end transition-all duration-500 relative">
+                    <span class="card-label text-white text-xl font-semibold uppercase tracking-normal mb-1">Syuruq</span>
+                    <div class="line-accent w-full h-1 bg-white/40 mb-2"></div>
+                    <span id="time-syuruq" class="card-time text-5xl font-light text-white/90">--:--</span>
+                </div>
+
+                <div id="card-dzuhur" class="prayer-card h-full p-4 flex flex-col justify-end transition-all duration-500 relative">
+                    <span class="card-label text-white text-xl font-semibold uppercase tracking-normal mb-1">Dzuhur</span>
+                    <div class="line-accent w-full h-1 bg-white/40 mb-2"></div>
+                    <span id="time-dzuhur" class="card-time text-5xl font-light text-white/90">--:--</span>
+                </div>
+
+                <div id="card-ashar" class="prayer-card h-full p-4 flex flex-col justify-end transition-all duration-500 relative">
+                    <span class="card-label text-white text-xl font-semibold uppercase tracking-normal mb-1">Ashar</span>
+                    <div class="line-accent w-full h-1 bg-white/40 mb-2"></div>
+                    <span id="time-ashar" class="card-time text-5xl font-light text-white/90">--:--</span>
+                </div>
+
+                <div id="card-maghrib" class="prayer-card h-full p-4 flex flex-col justify-end transition-all duration-500 relative">
+                    <span class="card-label text-white text-xl font-semibold uppercase tracking-normal mb-1">Maghrib</span>
+                    <div class="line-accent w-full h-1 bg-white/40 mb-2"></div>
+                    <span id="time-maghrib" class="card-time text-5xl font-light text-white/90">--:--</span>
+                </div>
+
+                <div id="card-isya" class="prayer-card h-full p-4 flex flex-col justify-end transition-all duration-500 relative">
+                    <span class="card-label text-white text-xl font-semibold uppercase tracking-normal mb-1">Isya</span>
+                    <div class="line-accent w-full h-1 bg-white/40 mb-2"></div>
+                    <span id="time-isya" class="card-time text-5xl font-light text-white/90">--:--</span>
+                </div>
+
+            </section>
+
+            <!-- FOOTER RUNNING TEXT -->
+            <footer class="bg-black/60 backdrop-blur-md border-t border-white/10 py-3.5 px-6 whitespace-nowrap -mx-10">
+                <marquee id="disp-running" class="text-xl font-semibold text-limeGlow tracking-normal">
+                    Selamat Datang di Masjid Al-Ijabah • Luruskan dan rapatkan shaf saat shalat berjamaah • Harap menonaktifkan HP.
+                </marquee>
+            </footer>
+        </div>
+    </div>
+
+    <!-- OVERLAY LAYAR ADZAN & IQOMAH (FULLSCREEN CUSTOM BACKGROUND, CENTERED, NO BOX) -->
+    <div id="event-overlay" class="hidden fixed inset-0 z-40 flex flex-col items-center justify-center text-center p-8 bg-cover bg-center bg-no-repeat transition-all duration-700">
+        <!-- GRADIENT OVERLAY UNTUK KETERBACAAN TEKS -->
+        <div class="absolute inset-0 bg-black/60 z-0"></div>
+
+        <div class="relative z-10 flex flex-col items-center justify-center max-w-5xl w-full px-4">
+            <h2 id="event-title" class="text-5xl md:text-6xl font-extrabold text-limeGlow uppercase tracking-wider mb-4 drop-shadow-2xl">WAKTU ADZAN</h2>
+            <p id="event-subtitle" class="text-2xl md:text-3xl text-greenTea font-medium mb-8 drop-shadow-lg">Mengumandangkan Adzan Dzuhur</p>
+            <div id="timer-display" class="text-9xl md:text-[12rem] font-bold text-white tracking-wider my-6 font-poppins drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)] leading-none">02:00</div>
+            <p id="event-footer" class="text-lg md:text-xl text-limeGlow uppercase tracking-widest mt-6 font-semibold drop-shadow">Harap Tenang & Menyiapkan Diri</p>
+        </div>
+    </div>
+
+    <!-- POP-UP MODAL LOGIN ADMIN -->
+    <div id="login-modal" class="hidden fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-emeraldPine border border-limeGlow/30 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+            <div class="text-center">
+                <h2 class="text-xl font-bold text-limeGlow">🔒 Login Pengurus</h2>
+                <p class="text-xs text-greenTea mt-1">Masukkan Username & Password Admin</p>
+            </div>
+            
+            <form onsubmit="handleLoginSubmit(event)" autocomplete="off" class="space-y-3">
+                <div>
+                    <label class="text-xs text-white/80 block mb-1">Username</label>
+                    <input type="text" id="login-user" autocomplete="new-username" required class="w-full bg-darkBg border border-greenTea/30 p-2.5 rounded-lg text-white text-sm focus:outline-none focus:border-limeGlow" placeholder="Username">
+                </div>
+                <div>
+                    <label class="text-xs text-white/80 block mb-1">Password</label>
+                    <input type="password" id="login-pass" autocomplete="new-password" required class="w-full bg-darkBg border border-greenTea/30 p-2.5 rounded-lg text-white text-sm focus:outline-none focus:border-limeGlow" placeholder="Password">
+                    
+                    <div class="flex items-center gap-2 mt-2">
+                        <input type="checkbox" id="show-pass-check" onchange="toggleShowPassword(this)" class="w-4 h-4 accent-limeGlow cursor-pointer">
+                        <label for="show-pass-check" class="text-xs text-limeGlow/90 cursor-pointer select-none">Tampilkan password</label>
+                    </div>
+                </div>
+
+                <p id="login-err" class="text-xs text-red-400 font-semibold text-center hidden">Username atau Password Salah!</p>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeLoginModal()" class="w-1/2 bg-darkBg hover:bg-black py-2 rounded-lg text-xs font-semibold">Batal</button>
+                    <button type="submit" class="w-1/2 bg-limeGlow hover:bg-greenTea text-darkBg py-2 rounded-lg text-xs font-bold">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PANEL PENGATURAN ADMIN -->
+    <div id="admin-panel" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <div class="bg-emeraldPine border border-limeGlow/30 rounded-2xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-greenTea/20 pb-2">
+                <h2 class="text-lg font-bold text-limeGlow">⚙️ Pengaturan Display</h2>
+                <button onclick="logoutAdmin()" class="bg-red-900/60 hover:bg-red-800 text-red-200 text-xs px-3 py-1 rounded-lg border border-red-500/30">Logout</button>
+            </div>
+
+            <!-- TOMBOL TES SIMULASI ADZAN -->
+            <div class="bg-black/30 p-3 rounded-xl border border-limeGlow/20 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xs font-bold text-limeGlow">🧪 Tes Tampilan Adzan / Iqomah</h3>
+                    <p class="text-[11px] text-white/70">Uji coba kemunculan timer adzan & iqomah secara instan</p>
+                </div>
+                <button onclick="testAdzanSequence()" class="bg-amber-400 hover:bg-amber-500 text-darkBg font-bold text-xs px-3 py-2 rounded-lg transition">
+                    ▶️ Mulai Tes
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs text-greenTea">Nama Masjid</label>
+                    <input type="text" id="cfg-nama" class="w-full bg-darkBg border border-greenTea/30 p-2 rounded text-white text-xs focus:outline-none">
+                </div>
+                <div>
+                    <label class="text-xs text-greenTea">Alamat Masjid</label>
+                    <input type="text" id="cfg-alamat" class="w-full bg-darkBg border border-greenTea/30 p-2 rounded text-white text-xs focus:outline-none">
+                </div>
+            </div>
+
+            <!-- PENGATURAN TIMER ADZAN & IQOMAH -->
+            <div class="border-t border-greenTea/20 pt-3">
+                <label class="text-xs text-limeGlow font-semibold block mb-2">⏱️ Pengaturan Durasi Timer (Dalam Menit):</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-white/80 block mb-1">Durasi Adzan (Menit)</label>
+                        <input type="number" id="cfg-timer-adzan" min="1" max="15" class="w-full bg-darkBg border border-greenTea/30 p-2 rounded text-white text-xs focus:outline-none" placeholder="Contoh: 2">
+                    </div>
+                    <div>
+                        <label class="text-xs text-white/80 block mb-1">Durasi Jeda Iqomah (Menit)</label>
+                        <input type="number" id="cfg-timer-iqomah" min="1" max="30" class="w-full bg-darkBg border border-greenTea/30 p-2 rounded text-white text-xs focus:outline-none" placeholder="Contoh: 7">
+                    </div>
+                </div>
+            </div>
+
+            <!-- BACKGROUND LAYAR TIMER ADZAN & IQOMAH -->
+            <div class="border-t border-greenTea/20 pt-3">
+                <label class="text-xs text-limeGlow font-semibold block mb-1">🖼️ Background Custom Layar Adzan & Iqomah:</label>
+                <div id="drop-bg-event" class="drop-zone p-3 rounded-xl text-center bg-darkBg/50 cursor-pointer flex items-center justify-between px-4">
+                    <p class="text-xs text-white/80">Tarik & Lepas foto di sini, atau <span class="text-limeGlow font-bold">Klik Pilih BG Timer</span></p>
+                    <input type="file" id="input-bg-event" accept="image/*" class="hidden">
+                    <div id="preview-bg-event" class="w-16 h-10 rounded bg-black/30 p-1 flex items-center justify-center overflow-hidden border border-white/20">
+                        <img id="img-preview-bg-event" src="" class="w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-greenTea/20 pt-3">
+                <label class="text-xs text-limeGlow font-semibold block mb-1">Logo Masjid (PNG Transparent):</label>
+                <div id="drop-logo" class="drop-zone p-3 rounded-xl text-center bg-darkBg/50 cursor-pointer flex items-center justify-between px-4">
+                    <p class="text-xs text-white/80">Tarik & Lepas logo di sini, atau <span class="text-limeGlow font-bold">Klik untuk Pilih Logo</span></p>
+                    <input type="file" id="input-logo" accept="image/*" class="hidden">
+                    <div id="preview-logo" class="w-12 h-12 rounded bg-black/30 p-1 flex items-center justify-center overflow-hidden border border-white/20">
+                        <img id="img-preview-logo" src="" class="w-full h-full object-contain">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-greenTea">Running Text</label>
+                <textarea id="cfg-running" rows="2" class="w-full bg-darkBg border border-greenTea/30 p-2 rounded text-white text-xs focus:outline-none"></textarea>
+            </div>
+
+            <div class="border-t border-greenTea/20 pt-3">
+                <label class="text-xs text-limeGlow font-semibold block mb-1">Foto Latar Belakang Display Utama (DENGAN Jam):</label>
+                <div id="drop-normal" class="drop-zone p-4 rounded-xl text-center bg-darkBg/50 cursor-pointer">
+                    <p class="text-xs text-white/80">Tarik & Lepas foto di sini, atau <span class="text-limeGlow font-bold">Klik untuk Pilih Foto</span></p>
+                    <input type="file" id="input-normal" multiple accept="image/*" class="hidden">
+                </div>
+                <div id="preview-normal" class="flex gap-2 flex-wrap mt-2"></div>
+            </div>
+
+            <div class="border-t border-greenTea/20 pt-3">
+                <label class="text-xs text-amber-300 font-semibold block mb-1">Slide Foto Poster/Pengumuman (TANPA Jam - 10 Detik/Foto):</label>
+                <div id="drop-full" class="drop-zone p-4 rounded-xl text-center bg-darkBg/50 cursor-pointer">
+                    <p class="text-xs text-white/80">Tarik & Lepas foto di sini, atau <span class="text-amber-300 font-bold">Klik untuk Pilih Foto</span></p>
+                    <input type="file" id="input-full" multiple accept="image/*" class="hidden">
+                </div>
+                <div id="preview-full" class="flex gap-2 flex-wrap mt-2"></div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-greenTea/20">
+                <button onclick="closeAdminPanel()" class="bg-darkBg hover:bg-black px-4 py-1.5 rounded text-xs">Batal</button>
+                <button onclick="saveConfig()" class="bg-limeGlow hover:bg-greenTea text-darkBg px-4 py-1.5 rounded text-xs font-bold">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT ENGINE -->
+    <script>
+        const defaultLogoSVG = "data:image/svg+xml;utf8," + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+            <path d="M 250,20 A 30,30 0 1,0 275,45 A 24,24 0 1,1 250,20 Z" fill="#CEF17B"/>
+            <polygon points="262,25 265,33 273,33 267,38 269,46 262,41 255,46 257,38 251,33 259,33" fill="#CEF17B"/>
+            <path d="M 250,55 C 200,100 190,160 190,200 L 310,200 C 310,160 300,100 250,55 Z" fill="#084734" stroke="#CEF17B" stroke-width="6"/>
+            <g stroke="#CEF17B" stroke-width="6" stroke-linejoin="round" fill="none">
+                <path d="M 100,230 L 250,200 L 400,230 L 400,340 L 250,370 L 100,340 Z" fill="#084734"/>
+                <path d="M 250,200 L 250,370"/>
+                <path d="M 100,265 L 250,235 L 400,265"/>
+                <path d="M 100,300 L 250,270 L 400,300"/>
+                <path d="M 100,340 L 250,370 L 400,340 L 400,360 L 250,390 L 100,360 Z" fill="#CEF17B"/>
+            </g>
+        </svg>`);
+
+        const ADMIN_USER = "admin";
+        const ADMIN_PASS = "masjid123";
+
+        const defaultConfig = {
+            nama: "MASJID AL-IJABAH",
+            alamat: "Pura Bojonggede Blok J&I, Tajurhalang, Kab. Bogor",
+            logo: defaultLogoSVG,
+            bgEvent: "",
+            timerAdzan: 2,
+            timerIqomah: 7,
+            running: "Selamat Datang di Masjid Al-Ijabah • Luruskan dan rapatkan shaf saat shalat berjamaah • Harap menonaktifkan HP.",
+            imagesNormal: [],
+            imagesFull: []
+        };
+
+        let config = { ...defaultConfig };
+        let tempLogo = defaultLogoSVG;
+        let tempBgEvent = "";
+        let tempNormalImages = [];
+        let tempFullImages = [];
+        let prayerTimings = {};
+        
+        let isFullMode = false;
+        let idxNormal = 0;
+        let idxFull = 0;
+        let activeSlideIndex = 1;
+        let isEventActive = false;
+        let isAuthenticated = false;
+        let loopTimer = null;
+        let countdownTimer = null;
+
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open("MasjidDisplayDB", 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains("settings")) {
+                        db.createObjectStore("settings");
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e);
+            });
+        }
+
+        async function saveConfigToDB(data) {
+            const db = await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction("settings", "readwrite");
+                const store = tx.objectStore("settings");
+                store.put(data, "main_config");
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
+            });
+        }
+
+        async function loadConfigFromDB() {
+            const db = await initIndexedDB();
+            return new Promise((resolve) => {
+                const tx = db.transaction("settings", "readonly");
+                const store = tx.objectStore("settings");
+                const request = store.get("main_config");
+                request.onsuccess = () => resolve(request.result || defaultConfig);
+                request.onerror = () => resolve(defaultConfig);
+            });
+        }
+
+        function toggleShowPassword(checkbox) {
+            const passInput = document.getElementById('login-pass');
+            passInput.type = checkbox.checked ? 'text' : 'password';
+        }
+
+        function openLoginModal() {
+            if (isAuthenticated) {
+                openAdminPanel();
+            } else {
+                const modal = document.getElementById('login-modal');
+                modal.classList.remove('hidden');
+                document.getElementById('login-err').classList.add('hidden');
+                document.getElementById('login-user').value = '';
+                document.getElementById('login-pass').value = '';
+                document.getElementById('show-pass-check').checked = false;
+                document.getElementById('login-pass').type = 'password';
+                setTimeout(() => document.getElementById('login-user').focus(), 100);
+            }
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-user').value.trim();
+            const p = document.getElementById('login-pass').value.trim();
+
+            if (u === ADMIN_USER && p === ADMIN_PASS) {
+                isAuthenticated = true;
+                closeLoginModal();
+                openAdminPanel();
+            } else {
+                document.getElementById('login-err').classList.remove('hidden');
+            }
+        }
+
+        function logoutAdmin() {
+            isAuthenticated = false;
+            closeAdminPanel();
+            alert("Anda telah logout dari mode admin.");
+        }
+
+        function openAdminPanel() {
+            const p = document.getElementById('admin-panel');
+            p.classList.remove('hidden');
+            document.getElementById('cfg-nama').value = config.nama || '';
+            document.getElementById('cfg-alamat').value = config.alamat || '';
+            document.getElementById('cfg-running').value = config.running || '';
+            document.getElementById('cfg-timer-adzan').value = config.timerAdzan || 2;
+            document.getElementById('cfg-timer-iqomah').value = config.timerIqomah || 7;
+            tempLogo = config.logo || defaultLogoSVG;
+            tempBgEvent = config.bgEvent || '';
+            tempNormalImages = [...(config.imagesNormal || [])];
+            tempFullImages = [...(config.imagesFull || [])];
+            renderPreviews();
+        }
+
+        function closeAdminPanel() {
+            document.getElementById('admin-panel').classList.add('hidden');
+        }
+
+        function applyConfig() {
+            document.getElementById('disp-nama').innerText = config.nama || defaultConfig.nama;
+            document.getElementById('disp-alamat').innerText = config.alamat || defaultConfig.alamat;
+            document.getElementById('disp-logo').src = config.logo || defaultLogoSVG;
+            document.getElementById('disp-running').innerText = config.running || defaultConfig.running;
+
+            // SET CUSTOM BACKGROUND LAYAR ADZAN JIKA ADA
+            const overlay = document.getElementById('event-overlay');
+            if (config.bgEvent) {
+                overlay.style.backgroundImage = `url('${config.bgEvent}')`;
+            } else {
+                overlay.style.backgroundImage = `none`;
+                overlay.style.backgroundColor = '#04241A';
+            }
+
+            startDisplayLoop();
+        }
+
+        function triggerFadeSlide(nextImageUrl) {
+            const slide1 = document.getElementById('bg-slide-1');
+            const slide2 = document.getElementById('bg-slide-2');
+
+            if (activeSlideIndex === 1) {
+                slide2.src = nextImageUrl;
+                slide2.classList.remove('opacity-0');
+                slide2.classList.add('opacity-100');
+                slide1.classList.remove('opacity-100');
+                slide1.classList.add('opacity-0');
+                activeSlideIndex = 2;
+            } else {
+                slide1.src = nextImageUrl;
+                slide1.classList.remove('opacity-0');
+                slide1.classList.add('opacity-100');
+                slide2.classList.remove('opacity-100');
+                slide2.classList.add('opacity-0');
+                activeSlideIndex = 1;
+            }
+        }
+
+        function updateUIState(hideUI) {
+            const ui = document.getElementById('main-display');
+            const bgGrad = document.getElementById('hero-gradient');
+
+            if (hideUI) {
+                ui.classList.add('hidden-ui');
+                bgGrad.style.opacity = '0';
+            } else {
+                ui.classList.remove('hidden-ui');
+                bgGrad.style.opacity = '1';
+            }
+        }
+
+        function startDisplayLoop() {
+            if (loopTimer) clearTimeout(loopTimer);
+
+            const normArr = config.imagesNormal || [];
+            const fullArr = config.imagesFull || [];
+            const slide1 = document.getElementById('bg-slide-1');
+            const placeholder = document.getElementById('no-photo-placeholder');
+
+            function runStep() {
+                if (isEventActive) {
+                    loopTimer = setTimeout(runStep, 5000);
+                    return;
+                }
+
+                if (!isFullMode) {
+                    updateUIState(false);
+                    if (normArr.length > 0) {
+                        triggerFadeSlide(normArr[idxNormal % normArr.length]);
+                        idxNormal = (idxNormal + 1) % normArr.length;
+                        slide1.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                    } else {
+                        slide1.classList.add('hidden');
+                        placeholder.classList.remove('hidden');
+                    }
+
+                    if (fullArr.length > 0) {
+                        isFullMode = true;
+                        idxFull = 0;
+                        loopTimer = setTimeout(runStep, 90000); // 1.5 Menit
+                    } else {
+                        loopTimer = setTimeout(runStep, 90000);
+                    }
+
+                } else {
+                    updateUIState(true);
+                    slide1.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+
+                    if (idxFull < fullArr.length) {
+                        triggerFadeSlide(fullArr[idxFull]);
+                        idxFull++;
+                        loopTimer = setTimeout(runStep, 10000); // 10 Detik
+                    } else {
+                        isFullMode = false;
+                        runStep();
+                    }
+                }
+            }
+
+            runStep();
+        }
+
+        function renderPreviews() {
+            document.getElementById('img-preview-logo').src = tempLogo;
+            document.getElementById('img-preview-bg-event').src = tempBgEvent || '';
+
+            const pNorm = document.getElementById('preview-normal');
+            pNorm.innerHTML = '';
+            tempNormalImages.forEach((src, idx) => {
+                pNorm.innerHTML += `
+                    <div class="relative w-16 h-16 rounded overflow-hidden border border-white/20">
+                        <img src="${src}" class="w-full h-full object-cover">
+                        <button onclick="removeImg('normal', ${idx})" class="absolute top-0 right-0 bg-red-600 text-white text-[10px] w-4 h-4 flex items-center justify-center">✕</button>
+                    </div>`;
+            });
+
+            const pFull = document.getElementById('preview-full');
+            pFull.innerHTML = '';
+            tempFullImages.forEach((src, idx) => {
+                pFull.innerHTML += `
+                    <div class="relative w-16 h-16 rounded overflow-hidden border border-white/20">
+                        <img src="${src}" class="w-full h-full object-cover">
+                        <button onclick="removeImg('full', ${idx})" class="absolute top-0 right-0 bg-red-600 text-white text-[10px] w-4 h-4 flex items-center justify-center">✕</button>
+                    </div>`;
+            });
+        }
+
+        function removeImg(type, index) {
+            if (type === 'normal') tempNormalImages.splice(index, 1);
+            if (type === 'full') tempFullImages.splice(index, 1);
+            renderPreviews();
+        }
+
+        function setupDropZone(dropId, inputId, type) {
+            const dropZone = document.getElementById(dropId);
+            const input = document.getElementById(inputId);
+
+            dropZone.addEventListener('click', () => input.click());
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                });
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                handleFiles(files, type);
+            });
+
+            input.addEventListener('change', (e) => {
+                handleFiles(e.target.files, type);
+            });
+        }
+
+        function handleFiles(files, type) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const fileDataUrl = e.target.result;
+                        if (type === 'logo') tempLogo = fileDataUrl;
+                        if (type === 'bgEvent') tempBgEvent = fileDataUrl;
+                        if (type === 'normal') tempNormalImages.push(fileDataUrl);
+                        if (type === 'full') tempFullImages.push(fileDataUrl);
+                        renderPreviews();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        setupDropZone('drop-logo', 'input-logo', 'logo');
+        setupDropZone('drop-bg-event', 'input-bg-event', 'bgEvent');
+        setupDropZone('drop-normal', 'input-normal', 'normal');
+        setupDropZone('drop-full', 'input-full', 'full');
+
+        async function saveConfig() {
+            try {
+                config.nama = document.getElementById('cfg-nama').value;
+                config.alamat = document.getElementById('cfg-alamat').value;
+                config.running = document.getElementById('cfg-running').value;
+                config.timerAdzan = parseInt(document.getElementById('cfg-timer-adzan').value) || 2;
+                config.timerIqomah = parseInt(document.getElementById('cfg-timer-iqomah').value) || 7;
+                config.logo = tempLogo;
+                config.bgEvent = tempBgEvent;
+                config.imagesNormal = tempNormalImages;
+                config.imagesFull = tempFullImages;
+
+                await saveConfigToDB(config);
+                applyConfig();
+                closeAdminPanel();
+                alert("Pengaturan Berhasil Disimpan!");
+            } catch (err) {
+                alert("Penyimpanan gagal, terjadi kendala memori pada browser.");
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const timeStr = `${h}:${m}`;
+            
+            document.getElementById('h1').innerText = h[0];
+            document.getElementById('h2').innerText = h[1];
+            document.getElementById('m1').innerText = m[0];
+            document.getElementById('m2').innerText = m[1];
+            document.getElementById('s1').innerText = s[0];
+            document.getElementById('s2').innerText = s[1];
+
+            document.getElementById('date').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+            if (prayerTimings && !isEventActive) {
+                for (const [name, time] of Object.entries(prayerTimings)) {
+                    if (['Shubuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'].includes(name)) {
+                        if (timeStr === time && s === '00') {
+                            triggerAdzanSequence(name);
+                            break;
+                        }
+                    }
+                }
+                updateActiveHighlight(timeStr);
+            }
+        }
+        setInterval(updateClock, 1000);
+
+        async function fetchPrayerTimes() {
+            try {
+                const res = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Bogor&country=Indonesia&method=11');
+                const data = await res.json();
+                const t = data.data.timings;
+                const h = data.data.date.hijri;
+
+                prayerTimings = {
+                    Shubuh: t.Fajr,
+                    Syuruq: t.Sunrise,
+                    Dzuhur: t.Dhuhr,
+                    Ashar: t.Asr,
+                    Maghrib: t.Maghrib,
+                    Isya: t.Isha
+                };
+
+                document.getElementById('time-subuh').innerText = prayerTimings.Shubuh;
+                document.getElementById('time-syuruq').innerText = prayerTimings.Syuruq;
+                document.getElementById('time-dzuhur').innerText = prayerTimings.Dzuhur;
+                document.getElementById('time-ashar').innerText = prayerTimings.Ashar;
+                document.getElementById('time-maghrib').innerText = prayerTimings.Maghrib;
+                document.getElementById('time-isya').innerText = prayerTimings.Isya;
+
+                if (h) {
+                    document.getElementById('hijri-date').innerText = `${h.day} ${h.month.en} ${h.year} H`;
+                }
+
+            } catch (err) {
+                console.error("Gagal muat jadwal shalat/hijriah:", err);
+            }
+        }
+
+        function updateActiveHighlight(nowTime) {
+            const keys = ['Shubuh', 'Syuruq', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
+            let nextPrayer = 'Shubuh';
+
+            for (let i = 0; i < keys.length; i++) {
+                if (nowTime < prayerTimings[keys[i]]) {
+                    nextPrayer = keys[i];
+                    break;
+                }
+            }
+
+            keys.forEach(k => {
+                const cardKey = k === 'Shubuh' ? 'subuh' : k.toLowerCase();
+                const card = document.getElementById(`card-${cardKey}`);
+                const label = card.querySelector('.card-label');
+                const timeEl = card.querySelector('.card-time');
+                const line = card.querySelector('.line-accent');
+
+                if (k === nextPrayer) {
+                    card.className = "prayer-card h-full p-4 flex flex-col justify-end transition-all duration-300 relative bg-limeGlow text-darkBg shadow-2xl z-30";
+                    label.className = "card-label text-darkBg text-xl font-semibold uppercase tracking-normal mb-1";
+                    timeEl.className = "card-time text-darkBg text-xl font-semibold uppercase tracking-normal mb-1";
+                    timeEl.className = "card-time text-5xl font-extrabold text-darkBg";
+                    line.className = "line-accent w-full h-1.5 bg-darkBg mb-2";
+                } else {
+                    card.className = "prayer-card h-full p-4 flex flex-col justify-end transition-all duration-300 relative";
+                    label.className = "card-label text-white text-xl font-semibold uppercase tracking-normal mb-1";
+                    timeEl.className = "card-time text-5xl font-light text-white/90";
+                    line.className = "line-accent w-full h-1 bg-white/40 mb-2";
+                }
+            });
+        }
+
+        // RANGKAIAN ADZAN & IQOMAH SESUAI DURASI CUSTOM DI ADMIN PANEL
+        function triggerAdzanSequence(prayerName) {
+            isEventActive = true;
+            const overlay = document.getElementById('event-overlay');
+            const title = document.getElementById('event-title');
+            const subtitle = document.getElementById('event-subtitle');
+            const timerEl = document.getElementById('timer-display');
+
+            overlay.classList.remove('hidden');
+            
+            title.innerText = "WAKTU ADZAN";
+            subtitle.innerText = `Mengumandangkan Adzan ${prayerName}`;
+
+            const adzanSec = (config.timerAdzan || 2) * 60;
+            const iqomahSec = (config.timerIqomah || 7) * 60;
+
+            startCountdown(adzanSec, timerEl, () => {
+                title.innerText = "MENUNGGU IQOMAH";
+                subtitle.innerText = `Persiapan Shalat Berjamaah ${prayerName}`;
+
+                startCountdown(iqomahSec, timerEl, () => {
+                    overlay.classList.add('hidden');
+                    isEventActive = false;
+                });
+            });
+        }
+
+        // FUNGSI SIMULASI TES ADZAN & IQOMAH
+        function testAdzanSequence() {
+            closeAdminPanel();
+            isEventActive = true;
+            const overlay = document.getElementById('event-overlay');
+            const title = document.getElementById('event-title');
+            const subtitle = document.getElementById('event-subtitle');
+            const timerEl = document.getElementById('timer-display');
+
+            overlay.classList.remove('hidden');
+            
+            title.innerText = "WAKTU ADZAN (MODE TES)";
+            subtitle.innerText = "Mengumandangkan Adzan Dzuhur";
+
+            startCountdown(10, timerEl, () => {
+                title.innerText = "MENUNGGU IQOMAH (MODE TES)";
+                subtitle.innerText = "Persiapan Shalat Berjamaah Dzuhur";
+
+                startCountdown(10, timerEl, () => {
+                    overlay.classList.add('hidden');
+                    isEventActive = false;
+                });
+            });
+        }
+
+        function startCountdown(seconds, displayEl, onComplete) {
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            let left = seconds;
+            countdownTimer = setInterval(() => {
+                const m = String(Math.floor(left / 60)).padStart(2, '0');
+                const s = String(left % 60).padStart(2, '0');
+                displayEl.innerText = `${m}:${s}`;
+                left--;
+
+                if (left < 0) {
+                    clearInterval(countdownTimer);
+                    onComplete();
+                }
+            }, 1000);
+        }
+
+        async function initApp() {
+            config = await loadConfigFromDB();
+            applyConfig();
+            fetchPrayerTimes();
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
